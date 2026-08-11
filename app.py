@@ -1,4 +1,4 @@
-
+import os
 import streamlit as st
 import feedparser
 from groq import Groq
@@ -35,14 +35,21 @@ FEEDS = {
     "Emerging Hardware": "https://spectrum.ieee.org/feeds/feed.rss"
 }
 
-# 4. SILENT BACKEND API KEY RETRIEVAL (Never shown in UI)
-api_key = st.secrets.get("GROQ_API_KEY", "")
+# 4. UNIVERSAL API KEY RETRIEVAL (Works on Render, Streamlit Cloud, & Locally)
+api_key = os.environ.get("GROQ_API_KEY", "")
+
+# Fallback check for st.secrets if not found in os.environ
+if not api_key:
+    try:
+        api_key = st.secrets.get("GROQ_API_KEY", "")
+    except Exception:
+        pass
 
 if not api_key:
-    st.error("🔒 API Key Missing! Please configure `GROQ_API_KEY` in `.streamlit/secrets.toml` or Streamlit Cloud Secrets.")
+    st.error("🔒 API Key Missing! Please configure `GROQ_API_KEY` in Environment Variables or Secrets.")
     st.stop()
 
-# 5. Sidebar Configuration (Only user settings, NO key fields)
+# 5. Sidebar Configuration
 with st.sidebar:
     st.header("⚙️ Dashboard Settings")
     selected_category = st.selectbox("Select Domain Feed", list(FEEDS.keys()))
