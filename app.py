@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import feedparser
 from groq import Groq
@@ -11,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom Cyberpunk & Glassmorphism Styling
+# 2. CSS Animations & Theme Styling
 st.markdown("""
 <style>
     /* Global Background */
@@ -28,13 +29,13 @@ st.markdown("""
         border-right: 1px solid rgba(56, 189, 248, 0.2);
     }
 
-    /* Sidebar Section Box */
+    /* Sidebar Card Panels */
     .sidebar-card {
         background: rgba(30, 41, 59, 0.5);
         border: 1px solid rgba(56, 189, 248, 0.2);
         border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 20px;
+        padding: 14px;
+        margin-bottom: 16px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         transition: all 0.3s ease;
     }
@@ -51,13 +52,7 @@ st.markdown("""
         background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: pulseGlow 4s ease-in-out infinite alternate;
         letter-spacing: -0.025em;
-    }
-
-    @keyframes pulseGlow {
-        0% { filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.2)); }
-        100% { filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.6)); }
     }
 
     .sub-caption {
@@ -68,49 +63,45 @@ st.markdown("""
         margin-bottom: 1.5rem;
     }
 
-    /* News Card Hover Effects */
-    .tech-card {
+    /* Base Article Container */
+    [data-testid="stVerticalBlock"] > div:has(div.article-anchor) {
         background: rgba(30, 41, 59, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(12px);
         border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
     }
 
-    .tech-card:hover {
-        transform: translateY(-6px);
+    /* Hover State for Article Box */
+    [data-testid="stVerticalBlock"] > div:has(div.article-anchor):hover {
         border-color: #38bdf8;
         box-shadow: 0 12px 30px -10px rgba(56, 189, 248, 0.35);
-        background: rgba(30, 41, 59, 0.9);
+        background: rgba(30, 41, 59, 0.95);
     }
 
-    /* Hover Details Expansion */
-    .card-details {
-        max-height: 0;
+    /* Slide-In Hover Details (Hides by default, slides in from left on hover) */
+    .reveal-details {
+        max-height: 0px;
         opacity: 0;
+        transform: translateX(-40px);
         overflow: hidden;
-        transition: max-height 0.5s ease, opacity 0.4s ease;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, max-height 0.6s ease;
     }
 
-    .tech-card:hover .card-details {
+    /* Trigger Slide-In from Left on Hover */
+    [data-testid="stVerticalBlock"] > div:has(div.article-anchor):hover .reveal-details {
         max-height: 500px;
         opacity: 1;
-        margin-top: 16px;
-        padding-top: 16px;
+        transform: translateX(0px);
+        margin-top: 15px;
+        padding-top: 15px;
         border-top: 1px dashed rgba(56, 189, 248, 0.3);
     }
 
-    /* Summary Styling */
-    .summary-text {
-        color: #cbd5e1;
-        line-height: 1.6;
-        font-size: 0.95rem;
-    }
-
-    /* Custom Button */
+    /* Primary Action Button */
     .stButton>button {
         background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
         color: #ffffff;
@@ -127,7 +118,6 @@ st.markdown("""
     .stButton>button:hover {
         transform: scale(1.02);
         box-shadow: 0 6px 25px rgba(56, 189, 248, 0.5);
-        background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
     }
 
     /* Status Badge */
@@ -140,12 +130,6 @@ st.markdown("""
         font-weight: 600;
         text-align: center;
         letter-spacing: 0.05em;
-        animation: blinkStatus 2s infinite;
-    }
-
-    @keyframes blinkStatus {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -192,6 +176,12 @@ with st.sidebar:
 # 6. Initialize Groq Client
 client = Groq(api_key=api_key)
 
+# Clean Text Function (Strips any raw markdown or codeblock tags from LLM response)
+def clean_llm_text(text):
+    text = re.sub(r'```[a-zA-Z]*', '', text)
+    text = text.replace('```', '').strip()
+    return text
+
 # 7. Execution Loop
 if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
     with st.spinner("⚡ Intercepting live satellite feeds..."):
@@ -205,9 +195,9 @@ if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
             snippet = entry.summary if 'summary' in entry else entry.title
             
             prompt = f"""
-            You are a senior tech analyst. Summarize this snippet into 2 short HTML bullet points for an engineer:
-            <li><b>Breakthrough:</b> [One concise bullet point]</li>
-            <li><b>Impact:</b> [One concise bullet point]</li>
+            You are a senior tech analyst. Summarize this snippet into 2 bullet points for an engineer:
+            • Breakthrough: (1 concise sentence)
+            • Impact: (1 concise sentence)
 
             Snippet: {snippet}
             """
@@ -217,28 +207,35 @@ if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
                     messages=[{"role": "user", "content": prompt}],
                     model="llama-3.3-70b-versatile",
                 )
-                summary_html = chat_completion.choices[0].message.content
+                summary_text = clean_llm_text(chat_completion.choices[0].message.content)
                 
-                # Render Clean HTML Hover Card
-                card_html = f"""
-                <div class="tech-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #38bdf8; font-weight: bold; font-size: 0.85rem; letter-spacing: 0.05em;">ARTICLE #{idx+1}</span>
-                        <span style="color: #94a3b8; font-size: 0.8rem;">Hover for AI Insights 💡</span>
-                    </div>
-                    <h3 style="color: #f8fafc; font-size: 1.25rem; margin: 10px 0; font-weight: 700;">{entry.title}</h3>
-                    <a href="{entry.link}" target="_blank" style="color: #818cf8; text-decoration: none; font-size: 0.9rem; font-weight: 600;">
-                        🔗 Read Source Document →
-                    </a>
+                # Container Wrapper with Anchor for CSS Selection
+                with st.container():
+                    st.markdown('<div class="article-anchor"></div>', unsafe_allow_html=True)
                     
-                    <div class="card-details">
-                        <ul class="summary-text" style="padding-left: 20px; margin: 0;">
-                            {summary_html}
-                        </ul>
+                    # Headline Header (Always Visible)
+                    st.markdown(f"""
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #38bdf8; font-weight: bold; font-size: 0.85rem;">ARTICLE #{idx+1}</span>
+                        <span style="color: #94a3b8; font-size: 0.8rem;">Hover to Reveal Details 💡</span>
                     </div>
-                </div>
-                """
-                st.markdown(card_html, unsafe_allow_html=True)
+                    <h3 style="color: #f8fafc; font-size: 1.25rem; margin: 8px 0 12px 0; font-weight: 700;">{entry.title}</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    # Slide-In Details Block (Triggers on Mouse Hover)
+                    formatted_summary = summary_text.replace('\n', '<br>')
+                    st.markdown(f"""
+                    <div class="reveal-details">
+                        <div style="margin-bottom: 12px;">
+                            <a href="{entry.link}" target="_blank" style="color: #818cf8; text-decoration: none; font-size: 0.9rem; font-weight: 600;">
+                                🔗 Read Full Source Article →
+                            </a>
+                        </div>
+                        <div style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">
+                            {formatted_summary}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Groq Analysis Error: {e}")
