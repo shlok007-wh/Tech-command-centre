@@ -11,17 +11,40 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Techy Custom CSS & Keyframe Animations
+# 2. Custom Cyberpunk & Glassmorphism Styling
 st.markdown("""
 <style>
-    /* Global Page Styling */
+    /* Global Background */
     .stApp {
         background: radial-gradient(circle at 50% 10%, #0f172a 0%, #020617 100%);
         color: #f8fafc;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    /* Animated Glowing Title */
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(15px);
+        border-right: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* Sidebar Section Box */
+    .sidebar-card {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .sidebar-card:hover {
+        border-color: #818cf8;
+        box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
+    }
+
+    /* Title Styling */
     .main-title {
         font-size: 2.8rem;
         font-weight: 800;
@@ -37,16 +60,15 @@ st.markdown("""
         100% { filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.6)); }
     }
 
-    /* Subtitle Pulse */
     .sub-caption {
-        font-size: 1.05rem;
+        font-size: 1rem;
         color: #94a3b8;
         letter-spacing: 0.05em;
         text-transform: uppercase;
         margin-bottom: 1.5rem;
     }
 
-    /* Interactive Hover News Cards */
+    /* News Card Hover Effects */
     .tech-card {
         background: rgba(30, 41, 59, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -55,42 +77,40 @@ st.markdown("""
         padding: 24px;
         margin-bottom: 24px;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative;
-        overflow: hidden;
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
     }
 
     .tech-card:hover {
-        transform: translateY(-8px) scale(1.01);
+        transform: translateY(-6px);
         border-color: #38bdf8;
         box-shadow: 0 12px 30px -10px rgba(56, 189, 248, 0.35);
         background: rgba(30, 41, 59, 0.9);
     }
 
-    /* Hide Details until Mouse Hover */
+    /* Hover Details Expansion */
     .card-details {
         max-height: 0;
         opacity: 0;
         overflow: hidden;
-        transition: max-height 0.6s ease-in-out, opacity 0.4s ease-in-out;
+        transition: max-height 0.5s ease, opacity 0.4s ease;
     }
 
     .tech-card:hover .card-details {
-        max-height: 800px;
+        max-height: 500px;
         opacity: 1;
         margin-top: 16px;
         padding-top: 16px;
-        border-top: 1px dashed rgba(255, 255, 255, 0.15);
+        border-top: 1px dashed rgba(56, 189, 248, 0.3);
     }
 
-    /* Tech Bullet Points */
+    /* Summary Styling */
     .summary-text {
-        color: #e2e8f0;
+        color: #cbd5e1;
         line-height: 1.6;
-        font-size: 0.98rem;
+        font-size: 0.95rem;
     }
 
-    /* Custom Button Styling */
+    /* Custom Button */
     .stButton>button {
         background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
         color: #ffffff;
@@ -110,13 +130,13 @@ st.markdown("""
         background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
     }
 
-    /* Sidebar Status Badge */
+    /* Status Badge */
     .status-badge {
         background: rgba(34, 197, 94, 0.15);
         color: #4ade80;
         border: 1px solid rgba(74, 222, 128, 0.3);
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 10px 14px;
+        border-radius: 10px;
         font-weight: 600;
         text-align: center;
         letter-spacing: 0.05em;
@@ -155,16 +175,18 @@ if not api_key:
     st.error("🔒 API Key Missing! Please configure `GROQ_API_KEY` in Environment Variables or Secrets.")
     st.stop()
 
-# 5. Sidebar Controls with Updated Labels
+# 5. Interactive Theme-Matched Sidebar
 with st.sidebar:
-    st.markdown("### ⚙️ Your domain")
+    st.markdown('<h2 style="color:#38bdf8; font-size: 1.4rem; font-weight:800; margin-bottom: 20px;">⚙️ Your domain</h2>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="sidebar-card"><span style="color:#cbd5e1; font-weight:600;">🌐 Select Category</span>', unsafe_allow_html=True)
     selected_category = st.selectbox("Select Category", list(FEEDS.keys()), label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    st.write("")
-    st.markdown("### 📊 Select number of articles")
+    st.markdown('<div class="sidebar-card"><span style="color:#cbd5e1; font-weight:600;">📊 Select number of articles</span>', unsafe_allow_html=True)
     num_articles = st.slider("Select number of articles", 1, 5, 3, label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
     st.markdown('<div class="status-badge">🟢 you are good to go</div>', unsafe_allow_html=True)
 
 # 6. Initialize Groq Client
@@ -183,10 +205,10 @@ if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
             snippet = entry.summary if 'summary' in entry else entry.title
             
             prompt = f"""
-            You are a senior tech analyst. Summarize this news snippet for an engineer:
-            • **Breakthrough:** (1 concise bullet point on what happened)
-            • **Impact:** (1 concise bullet point on technical importance)
-            
+            You are a senior tech analyst. Summarize this snippet into 2 short HTML bullet points for an engineer:
+            <li><b>Breakthrough:</b> [One concise bullet point]</li>
+            <li><b>Impact:</b> [One concise bullet point]</li>
+
             Snippet: {snippet}
             """
             
@@ -195,17 +217,14 @@ if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
                     messages=[{"role": "user", "content": prompt}],
                     model="llama-3.3-70b-versatile",
                 )
-                summary_text = chat_completion.choices[0].message.content
+                summary_html = chat_completion.choices[0].message.content
                 
-                # HTML Format Conversion for clean rendering inside CSS card
-                formatted_summary = summary_text.replace('\n', '<br>').replace('**', '<b>').replace('**', '</b>')
-                
-                # Render Animated Hover Card
+                # Render Clean HTML Hover Card
                 card_html = f"""
                 <div class="tech-card">
-                    <div style="display: flex; justify-space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #38bdf8; font-weight: bold; font-size: 0.85rem; letter-spacing: 0.05em;">ARTICLE #{idx+1}</span>
-                        <span style="color: #94a3b8; font-size: 0.8rem; float: right;">Hover for AI Insights 💡</span>
+                        <span style="color: #94a3b8; font-size: 0.8rem;">Hover for AI Insights 💡</span>
                     </div>
                     <h3 style="color: #f8fafc; font-size: 1.25rem; margin: 10px 0; font-weight: 700;">{entry.title}</h3>
                     <a href="{entry.link}" target="_blank" style="color: #818cf8; text-decoration: none; font-size: 0.9rem; font-weight: 600;">
@@ -213,9 +232,9 @@ if st.button(f"🚀 Fetch Latest Breakthroughs from {selected_category}"):
                     </a>
                     
                     <div class="card-details">
-                        <div class="summary-text">
-                            {formatted_summary}
-                        </div>
+                        <ul class="summary-text" style="padding-left: 20px; margin: 0;">
+                            {summary_html}
+                        </ul>
                     </div>
                 </div>
                 """
